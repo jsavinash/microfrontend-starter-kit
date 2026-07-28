@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { Routes, Route, Link, Navigate, useNavigate, useLocation } from "react-router-dom";
+import {
+    Routes,
+    Route,
+    Link,
+    Navigate,
+    useNavigate,
+    useLocation,
+} from "react-router-dom";
 import { Button } from "@repo/ui-components";
 import { formatDate } from "@repo/utils";
 
@@ -160,7 +167,8 @@ const AuthApp: React.FC = () => {
     const location = useLocation();
     // Determine if we're on a sub-route to highlight the active tab
     const currentPath = location.pathname;
-    const isLogin = !currentPath.endsWith("/register") && !currentPath.endsWith("/profile");
+    const isLogin =
+        !currentPath.endsWith("/register") && !currentPath.endsWith("/profile");
 
     return (
         <div>
@@ -175,28 +183,31 @@ const AuthApp: React.FC = () => {
             <div className="mb-6 flex gap-2">
                 <Link
                     to="."
-                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${isLogin
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                        isLogin
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
                 >
                     Login
                 </Link>
                 <Link
                     to="register"
-                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${currentPath.endsWith("/register")
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                        currentPath.endsWith("/register")
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
                 >
                     Register
                 </Link>
                 <Link
                     to="profile"
-                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${currentPath.endsWith("/profile")
-                        ? "bg-blue-600 text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                        currentPath.endsWith("/profile")
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
                 >
                     Profile
                 </Link>

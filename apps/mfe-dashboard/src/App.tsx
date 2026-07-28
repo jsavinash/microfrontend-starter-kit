@@ -21,8 +21,9 @@ const MetricCard: React.FC<MetricCardProps> = ({
         <h3 className="text-sm font-medium text-gray-500">{title}</h3>
         <p className="mt-2 text-3xl font-bold text-gray-900">{value}</p>
         <p
-            className={`mt-2 text-sm font-medium ${isPositive ? "text-green-600" : "text-red-600"
-                }`}
+            className={`mt-2 text-sm font-medium ${
+                isPositive ? "text-green-600" : "text-red-600"
+            }`}
         >
             {isPositive ? "↑" : "↓"} {change} from last month
         </p>
@@ -218,28 +219,32 @@ const DashboardApp: React.FC = () => {
             <div className="mb-6 flex gap-2">
                 <a
                     href="."
-                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${currentPath === "/dashboard" || currentPath.endsWith("/dashboard/")
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                        currentPath === "/dashboard" ||
+                        currentPath.endsWith("/dashboard/")
                             ? "bg-blue-600 text-white"
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
+                    }`}
                 >
                     Overview
                 </a>
                 <a
                     href="analytics"
-                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${currentPath.includes("/analytics")
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                        currentPath.includes("/analytics")
                             ? "bg-blue-600 text-white"
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
+                    }`}
                 >
                     Analytics
                 </a>
                 <a
                     href="settings"
-                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${currentPath.includes("/settings")
+                    className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                        currentPath.includes("/settings")
                             ? "bg-blue-600 text-white"
                             : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        }`}
+                    }`}
                 >
                     Settings
                 </a>

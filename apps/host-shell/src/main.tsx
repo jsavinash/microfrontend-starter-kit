@@ -7,7 +7,9 @@ import "./index.css";
 const rootElement = document.getElementById("root");
 
 if (!rootElement) {
-    throw new Error("Root element not found. Ensure index.html has a div with id 'root'.");
+    throw new Error(
+        "Root element not found. Ensure index.html has a div with id 'root'.",
+    );
 }
 
 ReactDOM.createRoot(rootElement).render(

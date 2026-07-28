@@ -40,11 +40,14 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                             Something went wrong
                         </h2>
                         <p className="mb-4 text-red-600">
-                            {this.state.error?.message || "Failed to load module"}
+                            {this.state.error?.message ||
+                                "Failed to load module"}
                         </p>
                         <Button
                             variant="outline"
-                            onClick={() => this.setState({ hasError: false, error: null })}
+                            onClick={() =>
+                                this.setState({ hasError: false, error: null })
+                            }
                         >
                             Try Again
                         </Button>
@@ -60,7 +63,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 const LoadingFallback: React.FC<{ name: string }> = ({ name }) => (
     <div className="flex min-h-[400px] items-center justify-center">
         <div className="text-center">
-            <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600 mx-auto" />
+            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
             <p className="text-gray-500">Loading {name}...</p>
         </div>
     </div>
@@ -73,20 +76,20 @@ const Navigation: React.FC = () => (
             <div className="flex items-center gap-8">
                 <Link
                     to="/"
-                    className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors"
+                    className="text-xl font-bold text-gray-900 transition-colors hover:text-blue-600"
                 >
                     🏠 Microfrontend Starter
                 </Link>
                 <div className="flex gap-4">
                     <Link
                         to="/auth"
-                        className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                        className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900"
                     >
                         Auth / Profile
                     </Link>
                     <Link
                         to="/dashboard"
-                        className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                        className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900"
                     >
                         Dashboard
                     </Link>

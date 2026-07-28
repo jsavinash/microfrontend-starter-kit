@@ -23,16 +23,16 @@ my-monorepo/
 
 ## Tech Stack
 
-| Category          | Technology                                      |
-| ----------------- | ----------------------------------------------- |
-| **Monorepo**      | Turborepo                                       |
-| **Package Mgr**   | pnpm (workspaces)                               |
-| **Framework**     | React 19 + TypeScript                           |
-| **Bundler**       | Vite 5                                          |
-| **Module Fed.**   | @originjs/vite-plugin-federation                |
-| **Styling**       | Tailwind CSS                                    |
-| **Testing**       | Vitest + React Testing Library / Playwright     |
-| **Code Quality**  | ESLint (flat config), Prettier, Husky, lint-staged |
+| Category         | Technology                                         |
+| ---------------- | -------------------------------------------------- |
+| **Monorepo**     | Turborepo                                          |
+| **Package Mgr**  | pnpm (workspaces)                                  |
+| **Framework**    | React 19 + TypeScript                              |
+| **Bundler**      | Vite 5                                             |
+| **Module Fed.**  | @originjs/vite-plugin-federation                   |
+| **Styling**      | Tailwind CSS                                       |
+| **Testing**      | Vitest + React Testing Library / Playwright        |
+| **Code Quality** | ESLint (flat config), Prettier, Husky, lint-staged |
 
 ## Getting Started
 
@@ -63,6 +63,7 @@ pnpm dev
 ```
 
 This will:
+
 1. Build both microfrontends (`mfe-auth` on port 3001, `mfe-dashboard` on port 3002)
 2. Start the MFEs in **preview mode** (serving production builds for Module Federation compatibility)
 3. Start the **Host Shell** on port 3000 in dev mode
@@ -70,6 +71,7 @@ This will:
 **Important:** Module Federation requires the remote MFEs to be built first so that `remoteEntry.js` is available. The `pnpm dev` command handles this automatically.
 
 **Apps:**
+
 - **Host Shell** → http://localhost:3000
 - **MFE Auth** → http://localhost:3001
 - **MFE Dashboard** → http://localhost:3002
@@ -134,6 +136,7 @@ Shared dependencies: `react`, `react-dom`, `react-router-dom`
 ### Error Handling
 
 Each remote microfrontend is wrapped with:
+
 - **Error Boundary** — Catches failures and displays a fallback UI with retry capability
 - **Suspense** — Shows a loading spinner while the remote module loads
 
@@ -149,16 +152,17 @@ Each remote microfrontend is wrapped with:
 
 ### Packages
 
-| Package               | Description                              |
-| --------------------- | ---------------------------------------- |
-| `ui-components`       | Shared React components (Button, etc.)   |
-| `utils`               | Shared utility functions                 |
-| `config-eslint`       | Shared ESLint flat configs               |
-| `config-typescript`   | Shared TypeScript configuration bases    |
+| Package             | Description                            |
+| ------------------- | -------------------------------------- |
+| `ui-components`     | Shared React components (Button, etc.) |
+| `utils`             | Shared utility functions               |
+| `config-eslint`     | Shared ESLint flat configs             |
+| `config-typescript` | Shared TypeScript configuration bases  |
 
 ## Git Hooks
 
 Husky runs lint-staged on every commit, which automatically:
+
 - Lints staged files with ESLint
 - Formats staged files with Prettier
 
@@ -168,15 +172,15 @@ This project includes a production-grade CI/CD pipeline using **GitHub Actions**
 
 ### Pipeline Stages
 
-| Stage | Name | Description |
-| ----- | ---- | ----------- |
-| 1 | **🔍 Quality Gate** | Linting, TypeScript type checking, formatting check, security audit |
-| 2 | **🧪 Unit & Integration Tests** | Vitest tests with coverage reports across all packages |
-| 3 | **📦 Build** | Compile all apps and packages via Turborepo |
-| 4 | **🌐 E2E Tests** | Playwright tests sharded across 2 parallel runners |
-| 5 | **📊 E2E Report** | Merged Playwright report from all shards |
-| 6 | **🚀 Deploy to GitHub Pages** | Deploy microfrontends to GitHub Pages (main branch only) |
-| 7 | **📬 Notify** | Deployment status notification |
+| Stage | Name                            | Description                                                         |
+| ----- | ------------------------------- | ------------------------------------------------------------------- |
+| 1     | **🔍 Quality Gate**             | Linting, TypeScript type checking, formatting check, security audit |
+| 2     | **🧪 Unit & Integration Tests** | Vitest tests with coverage reports across all packages              |
+| 3     | **📦 Build**                    | Compile all apps and packages via Turborepo                         |
+| 4     | **🌐 E2E Tests**                | Playwright tests sharded across 2 parallel runners                  |
+| 5     | **📊 E2E Report**               | Merged Playwright report from all shards                            |
+| 6     | **🚀 Deploy to GitHub Pages**   | Deploy microfrontends to GitHub Pages (main branch only)            |
+| 7     | **📬 Notify**                   | Deployment status notification                                      |
 
 ### Workflow Triggers
 
@@ -187,6 +191,7 @@ This project includes a production-grade CI/CD pipeline using **GitHub Actions**
 ### Quality Gates
 
 The pipeline enforces:
+
 - **ESLint** — Zero warnings policy
 - **TypeScript** — Strict type checking
 - **Prettier** — Consistent code formatting
@@ -222,11 +227,11 @@ https://<username>.github.io/microfrontend-starter-kit/
 
 The pipeline injects these env vars during the deploy job:
 
-| Variable | Purpose |
-| -------- | ------- |
-| `VITE_BASE_PATH` | Base path for the deployed app (e.g., `/microfrontend-starter-kit/`) |
-| `VITE_MFE_AUTH_URL` | Production URL for MFE Auth `remoteEntry.js` |
-| `VITE_MFE_DASHBOARD_URL` | Production URL for MFE Dashboard `remoteEntry.js` |
+| Variable                 | Purpose                                                              |
+| ------------------------ | -------------------------------------------------------------------- |
+| `VITE_BASE_PATH`         | Base path for the deployed app (e.g., `/microfrontend-starter-kit/`) |
+| `VITE_MFE_AUTH_URL`      | Production URL for MFE Auth `remoteEntry.js`                         |
+| `VITE_MFE_DASHBOARD_URL` | Production URL for MFE Dashboard `remoteEntry.js`                    |
 
 ### Local Preview of Production Build
 
@@ -245,12 +250,12 @@ pnpm --filter @repo/mfe-dashboard preview
 The pipeline is configured for repository at `https://github.com/jsavinash/microfrontend-starter-kit`. To adapt for your own repository:
 
 1. **Update the workflow file** (`.github/workflows/ci-cd.yml`):
-   - Replace `microfrontend-starter-kit` with your repository name in the deploy job's `VITE_BASE_PATH`, `VITE_MFE_AUTH_URL`, and `VITE_MFE_DASHBOARD_URL` env vars
-   - Update the `concurrency` group if needed
+    - Replace `microfrontend-starter-kit` with your repository name in the deploy job's `VITE_BASE_PATH`, `VITE_MFE_AUTH_URL`, and `VITE_MFE_DASHBOARD_URL` env vars
+    - Update the `concurrency` group if needed
 
 2. **Enable GitHub Pages** in your repository:
-   - Go to **Settings** → **Pages**
-   - Under **Build and deployment**, select **GitHub Actions**
+    - Go to **Settings** → **Pages**
+    - Under **Build and deployment**, select **GitHub Actions**
 
 3. **Push to `main`** — The deployment will trigger automatically
 

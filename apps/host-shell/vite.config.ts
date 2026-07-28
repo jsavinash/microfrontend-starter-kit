@@ -23,10 +23,10 @@ export default defineConfig({
             name: "host-shell",
             remotes: {
                 mfeAuth: getRemoteUrl(
-                    "http://localhost:3001/assets/remoteEntry.js"
+                    "http://localhost:3001/assets/remoteEntry.js",
                 ),
                 mfeDashboard: getRemoteUrl(
-                    "http://localhost:3002/assets/remoteEntry.js"
+                    "http://localhost:3002/assets/remoteEntry.js",
                 ),
             },
             shared: ["react", "react-dom", "react-router-dom"],

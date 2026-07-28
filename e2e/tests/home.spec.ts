@@ -54,8 +54,6 @@ test.describe("Host Shell Application", () => {
         await expect(
             page.locator('nav a:has-text("Auth / Profile")'),
         ).toBeVisible();
-        await expect(
-            page.locator('nav a:has-text("Dashboard")'),
-        ).toBeVisible();
+        await expect(page.locator('nav a:has-text("Dashboard")')).toBeVisible();
     });
 });
