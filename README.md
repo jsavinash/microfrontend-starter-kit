@@ -170,14 +170,14 @@ Husky v9 runs automated checks before every commit and push to enforce code qual
 
 Runs automatically before every `git commit`:
 
-| Stage | Check | Blocks commit? |
-|-------|-------|:---:|
-| **1** | **Lint-staged** — ESLint `--fix` + Prettier on staged files | ✅ |
-| **2** | **TypeScript Type Check** — `turbo typecheck` if `.ts`/`.tsx` changed | ✅ |
-| **3** | **Unit Tests** — Runs tests for changed packages only | ✅ |
-| **4** | **Debug Artifacts** — Blocks `debugger;` and `.only` in tests; warns on `console.log()` | ✅ |
-| **5** | **Large File Check** — Blocks files > 1MB | ✅ |
-| **6** | **Dependency Audit** — Warns on high-severity vulnerabilities when lockfile changes | ⚠️ |
+| Stage | Check                                                                                   | Blocks commit? |
+| ----- | --------------------------------------------------------------------------------------- | :------------: |
+| **1** | **Lint-staged** — ESLint `--fix` + Prettier on staged files                             |       ✅       |
+| **2** | **TypeScript Type Check** — `turbo typecheck` if `.ts`/`.tsx` changed                   |       ✅       |
+| **3** | **Unit Tests** — Runs tests for changed packages only                                   |       ✅       |
+| **4** | **Debug Artifacts** — Blocks `debugger;` and `.only` in tests; warns on `console.log()` |       ✅       |
+| **5** | **Large File Check** — Blocks files > 1MB                                               |       ✅       |
+| **6** | **Dependency Audit** — Warns on high-severity vulnerabilities when lockfile changes     |       ⚠️       |
 
 ### Commit-msg Hook
 
@@ -190,6 +190,7 @@ Enforces [Conventional Commits](https://www.conventionalcommits.org/) format:
 **Types:** `feat`, `fix`, `chore`, `docs`, `style`, `refactor`, `perf`, `test`, `ci`, `build`, `revert`
 
 **Examples:**
+
 - `feat(auth): add login page`
 - `fix(host-shell): resolve routing issue`
 - `chore(deps): update dependencies`
@@ -198,12 +199,12 @@ Enforces [Conventional Commits](https://www.conventionalcommits.org/) format:
 
 Runs automatically before every `git push`:
 
-| Stage | Check | Blocks push? |
-|-------|-------|:---:|
-| **1** | **Branch Protection** — Prevents pushing to `main`/`master`/`production` | ✅ |
-| **2** | **Full Build** — `pnpm build` across all packages | ✅ |
-| **3** | **Full Test Suite** — `pnpm test` (all packages) | ✅ |
-| **4** | **E2E Check** — Verifies E2E test files exist | ⚠️ |
+| Stage | Check                                                                    | Blocks push? |
+| ----- | ------------------------------------------------------------------------ | :----------: |
+| **1** | **Branch Protection** — Prevents pushing to `main`/`master`/`production` |      ✅      |
+| **2** | **Full Build** — `pnpm build` across all packages                        |      ✅      |
+| **3** | **Full Test Suite** — `pnpm test` (all packages)                         |      ✅      |
+| **4** | **E2E Check** — Verifies E2E test files exist                            |      ⚠️      |
 
 ### Bypass Hooks (Emergency Only)
 
