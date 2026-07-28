@@ -1,0 +1,17 @@
+{
+    "extends": "@repo/config-typescript/react.json",
+    "compilerOptions": {
+        "outDir": "./dist",
+        "rootDir": "./src",
+        "types": [
+            "vite/client"
+        ]
+    },
+    "include": [
+        "src"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist"
+    ]
+}

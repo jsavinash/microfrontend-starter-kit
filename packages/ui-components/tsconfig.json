@@ -1,0 +1,20 @@
+{
+    "extends": "@repo/config-typescript/react.json",
+    "compilerOptions": {
+        "outDir": "./dist",
+        "rootDir": "./src",
+        "declaration": true,
+        "declarationMap": true,
+        "sourceMap": true
+    },
+    "include": [
+        "src"
+    ],
+    "exclude": [
+        "node_modules",
+        "dist",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.spec.ts"
+    ]
+}

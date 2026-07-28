@@ -1,0 +1,46 @@
+{
+    "name": "microfrontend-starter-kit",
+    "private": true,
+    "version": "1.0.0",
+    "description": "Production-ready microfrontend monorepo with Turborepo, Vite Module Federation, React 19, and TypeScript",
+    "scripts": {
+        "dev": "pnpm build:mfes && concurrently -n \"AUTH,DBOARD,HOST\" -c \"blue,green,yellow\" \"pnpm preview:mfe-auth\" \"pnpm preview:mfe-dashboard\" \"pnpm dev:host\"",
+        "dev:host": "pnpm --filter @repo/host-shell dev",
+        "dev:mfes": "pnpm build:mfes && pnpm run --parallel preview:mfes",
+        "build:mfes": "pnpm --filter @repo/mfe-auth build && pnpm --filter @repo/mfe-dashboard build",
+        "preview:mfes": "concurrently -n \"AUTH,DBOARD\" \"pnpm preview:mfe-auth\" \"pnpm preview:mfe-dashboard\"",
+        "preview:mfe-auth": "pnpm --filter @repo/mfe-auth preview",
+        "preview:mfe-dashboard": "pnpm --filter @repo/mfe-dashboard preview",
+        "build": "turbo build",
+        "lint": "turbo lint",
+        "test": "turbo test",
+        "test:e2e": "playwright test",
+        "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+        "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+        "prepare": "husky"
+    },
+    "devDependencies": {
+        "@playwright/test": "^1.48.0",
+        "concurrently": "^9.1.0",
+        "husky": "^9.1.6",
+        "lint-staged": "^15.2.10",
+        "prettier": "^3.3.3",
+        "prettier-plugin-tailwindcss": "^0.6.8",
+        "turbo": "^2.2.3",
+        "typescript": "^5.6.3"
+    },
+    "engines": {
+        "node": ">=18",
+        "pnpm": ">=9"
+    },
+    "packageManager": "pnpm@9.12.3",
+    "lint-staged": {
+        "*.{ts,tsx,js,jsx}": [
+            "eslint --fix",
+            "prettier --write"
+        ],
+        "*.{json,css,md}": [
+            "prettier --write"
+        ]
+    }
+}

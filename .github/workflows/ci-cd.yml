@@ -1,0 +1,481 @@
+# =============================================================================
+# CI/CD Pipeline for Microfrontend Starter Kit
+# =============================================================================
+# Architecture:
+#   - Monorepo with pnpm workspaces + Turborepo
+#   - Vite Module Federation (host-shell consumes mfe-auth, mfe-dashboard)
+#   - Deploys to GitHub Pages with proper MFE path isolation
+#
+# Deployment Structure on GitHub Pages:
+#   https://jsavinash.github.io/microfrontend-starter-kit/
+#   ├── index.html              (host-shell entry point)
+#   ├── assets/                 (host-shell assets)
+#   ├── mfe-auth/
+#   │   ├── assets/
+#   │   └── remoteEntry.js
+#   └── mfe-dashboard/
+#       ├── assets/
+#       └── remoteEntry.js
+# =============================================================================
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths-ignore:
+      - "**.md"
+      - ".gitignore"
+      - ".prettierrc"
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - "**.md"
+      - ".gitignore"
+      - ".prettierrc"
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Deploy to GitHub Pages"
+        required: true
+        default: false
+        type: boolean
+
+# =============================================================================
+# Environment
+# =============================================================================
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "9.12.3"
+  TURBO_TELEMETRY_DISABLED: 1
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 0
+
+# =============================================================================
+# Concurrency: Cancel in-progress runs for the same branch
+# =============================================================================
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+# =============================================================================
+# Permissions
+# =============================================================================
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  pull-requests: write
+  checks: write
+
+# =============================================================================
+# Jobs
+# =============================================================================
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. QUALITY GATE: Lint, Type Check, Format, Security Audit
+  # ---------------------------------------------------------------------------
+  quality:
+    name: "🔍 Quality Gate"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Run linting
+        run: pnpm lint
+        continue-on-error: false
+
+      - name: TypeScript type checking
+        run: pnpm turbo typecheck
+        continue-on-error: false
+
+      - name: Run security audit
+        run: pnpm audit --audit-level=high || true
+        continue-on-error: true
+
+      - name: Check for dependency vulnerabilities
+        run: pnpm audit --prod --audit-level=moderate || true
+        continue-on-error: true
+
+  # ---------------------------------------------------------------------------
+  # 2. UNIT & INTEGRATION TESTS
+  # ---------------------------------------------------------------------------
+  test:
+    name: "🧪 Unit & Integration Tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [quality]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run unit tests with coverage
+        run: pnpm test
+        env:
+          CI: true
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-reports
+          path: |
+            apps/*/coverage/
+            packages/*/coverage/
+          retention-days: 7
+          include-hidden-files: false
+
+      - name: Post coverage summary
+        uses: davelosert/vitest-coverage-report-action@v2
+        if: always() && github.event_name == 'pull_request'
+        with:
+          json-summary-path: |
+            apps/host-shell/coverage/coverage-summary.json
+            apps/mfe-auth/coverage/coverage-summary.json
+            apps/mfe-dashboard/coverage/coverage-summary.json
+            packages/ui-components/coverage/coverage-summary.json
+            packages/utils/coverage/coverage-summary.json
+          name: "Coverage Report"
+          fail-if-no-report: false
+
+  # ---------------------------------------------------------------------------
+  # 3. BUILD: Compile all apps and packages
+  # ---------------------------------------------------------------------------
+  build:
+    name: "📦 Build"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [test]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages and apps
+        run: pnpm build
+        env:
+          NODE_ENV: production
+          CI: true
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: |
+            apps/*/dist/
+          retention-days: 3
+          include-hidden-files: false
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # 4. E2E TESTS (Playwright)
+  # ---------------------------------------------------------------------------
+  e2e:
+    name: "🌐 E2E Tests"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [build]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        shardIndex: [1, 2]
+        shardTotal: [2]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: apps/
+
+      - name: Run E2E tests
+        run: pnpm test:e2e -- --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
+        env:
+          CI: true
+          PWTEST_SKIP_TEST_OUTPUT: 1
+
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ matrix.shardIndex }}
+          path: e2e/playwright-report/
+          retention-days: 7
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-test-results-${{ matrix.shardIndex }}
+          path: e2e/test-results/
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # 5. E2E REPORT: Merge shards and publish
+  # ---------------------------------------------------------------------------
+  e2e-report:
+    name: "📊 E2E Report"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [e2e]
+    if: always()
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download all Playwright reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: playwright-report-*
+          path: e2e/playwright-reports/
+          merge-multiple: true
+
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          pattern: e2e-test-results-*
+          path: e2e/test-results/
+          merge-multiple: true
+
+      - name: Merge E2E reports
+        run: pnpm exec playwright merge-reports --reporter html ./e2e/playwright-reports
+        continue-on-error: true
+
+      - name: Upload merged report
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-merged-report
+          path: e2e/playwright-report/
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # 6. DEPLOY TO GITHUB PAGES (main branch only)
+  # ---------------------------------------------------------------------------
+  deploy:
+    name: "🚀 Deploy to GitHub Pages"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [build, e2e]
+    if: |
+      (github.ref == 'refs/heads/main' && github.event_name == 'push') ||
+      (github.event_name == 'workflow_dispatch' && inputs.deploy)
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # -----------------------------------------------------------------------
+      # Step 1: Build MFEs (remote apps) with GitHub Pages base path
+      # -----------------------------------------------------------------------
+      - name: Build MFE Auth (remote)
+        run: pnpm --filter @repo/mfe-auth build
+        env:
+          NODE_ENV: production
+          CI: true
+          VITE_BASE_PATH: /microfrontend-starter-kit/mfe-auth/
+
+      - name: Build MFE Dashboard (remote)
+        run: pnpm --filter @repo/mfe-dashboard build
+        env:
+          NODE_ENV: production
+          CI: true
+          VITE_BASE_PATH: /microfrontend-starter-kit/mfe-dashboard/
+
+      # -----------------------------------------------------------------------
+      # Step 2: Build host-shell with production remote URLs
+      # -----------------------------------------------------------------------
+      - name: Build Host Shell with production remote URLs
+        run: pnpm --filter @repo/host-shell build
+        env:
+          NODE_ENV: production
+          CI: true
+          VITE_BASE_PATH: /microfrontend-starter-kit/
+          VITE_MFE_AUTH_URL: /microfrontend-starter-kit/mfe-auth/assets/remoteEntry.js
+          VITE_MFE_DASHBOARD_URL: /microfrontend-starter-kit/mfe-dashboard/assets/remoteEntry.js
+
+      # -----------------------------------------------------------------------
+      # Step 3: Assemble deployment directory
+      # -----------------------------------------------------------------------
+      - name: Assemble deployment directory
+        run: |
+          # Create deployment directory
+          mkdir -p deploy
+
+          # Copy host-shell build to root of deploy
+          cp -r apps/host-shell/dist/* deploy/
+
+          # Copy MFE builds to their respective subdirectories
+          mkdir -p deploy/mfe-auth
+          cp -r apps/mfe-auth/dist/* deploy/mfe-auth/
+
+          mkdir -p deploy/mfe-dashboard
+          cp -r apps/mfe-dashboard/dist/* deploy/mfe-dashboard/
+
+          # Create a .nojekyll file to prevent GitHub Pages from ignoring _next or _underscore files
+          touch deploy/.nojekyll
+
+          # List deployment structure for verification
+          echo "=== Deployment Structure ==="
+          find deploy -type f | head -50
+          echo "============================"
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: deploy
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Create deployment status check
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const url = '${{ steps.deployment.outputs.page_url }}';
+            const success = '${{ steps.deployment.outcome }}' === 'success';
+            core.notice(`Deployment ${success ? 'succeeded' : 'failed'}: ${url || 'N/A'}`);
+
+  # ---------------------------------------------------------------------------
+  # 7. DEPLOYMENT STATUS NOTIFICATION
+  # ---------------------------------------------------------------------------
+  notify:
+    name: "📬 Notify"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [deploy, e2e-report]
+    if: always() && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Check deployment status
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deployResult = '${{ needs.deploy.result }}';
+            const e2eResult = '${{ needs.e2e-report.result }}';
+
+            let status = '✅ All checks passed';
+            let color = 'success';
+
+            if (deployResult === 'success' && e2eResult === 'success') {
+              status = '✅ Deployment successful! All checks passed.';
+            } else if (deployResult === 'skipped') {
+              status = '⏭️ Deployment skipped (not a main branch push).';
+              color = 'warning';
+            } else if (deployResult === 'failure') {
+              status = '❌ Deployment failed!';
+              color = 'danger';
+            } else if (e2eResult === 'failure') {
+              status = '⚠️ E2E tests failed, but deployment succeeded.';
+              color = 'warning';
+            }
+
+            core.notice(`Status: ${status}`);
