@@ -13,6 +13,7 @@
         "preview:mfe-dashboard": "pnpm --filter @repo/mfe-dashboard preview",
         "build": "turbo build",
         "lint": "turbo lint",
+        "lint:fix": "turbo lint -- --fix && prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
         "test": "turbo test",
         "test:e2e": "playwright test",
         "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
