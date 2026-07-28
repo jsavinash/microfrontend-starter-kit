@@ -1,0 +1,120 @@
+#!/bin/sh
+# =============================================================================
+# Pre-push Hook — Full Validation Before Push
+# =============================================================================
+# This hook runs before every push to ensure the entire codebase is healthy.
+#
+# Checks:
+#   1. Branches — Prevent pushing to main/production directly
+#   2. Build — Ensure the full project builds successfully
+#   3. Full Test Suite — Run all tests (not just changed packages)
+#   4. E2E Check — Verify E2E tests exist (but don't run them - too slow)
+# =============================================================================
+
+# ---- Color output helpers ----
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+echo ""
+echo "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
+echo "${CYAN}  📤 Pre-push Checks${NC}"
+echo "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
+echo ""
+
+FAILED=0
+
+# ---- Get the remote and branch being pushed to ----
+REMOTE="$1"
+REMOTE_URL="$2"
+LOCAL_REF="$3"
+LOCAL_SHA="$4"
+REMOTE_REF="$5"
+REMOTE_SHA="$6"
+
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+# =============================================================================
+# Stage 1: Branch Protection
+# =============================================================================
+echo "${YELLOW}[1/4] Checking branch protection...${NC}"
+
+case "$REMOTE_REF" in
+    refs/heads/main|refs/heads/master|refs/heads/production)
+        echo "${RED}  ✖ Cannot push to protected branch: ${REMOTE_REF#refs/heads/}${NC}"
+        echo "${RED}    Use pull requests to merge into this branch.${NC}"
+        FAILED=1
+        ;;
+    refs/heads/develop|refs/heads/dev)
+        # Allow pushes to develop
+        echo "${GREEN}  ✓ Pushing to development branch${NC}"
+        ;;
+    *)
+        echo "${GREEN}  ✓ Branch '${CURRENT_BRANCH}' is allowed for push${NC}"
+        ;;
+esac
+echo ""
+
+# =============================================================================
+# Stage 2: Full Build
+# =============================================================================
+echo "${YELLOW}[2/4] Running full build...${NC}"
+pnpm build 2>&1
+BUILD_EXIT=$?
+if [ $BUILD_EXIT -ne 0 ]; then
+    echo "${RED}  ✖ Build failed. Fix build errors and try again.${NC}"
+    FAILED=1
+else
+    echo "${GREEN}  ✓ Build passed${NC}"
+fi
+echo ""
+
+# =============================================================================
+# Stage 3: Full Test Suite
+# =============================================================================
+echo "${YELLOW}[3/4] Running full test suite...${NC}"
+pnpm test 2>&1
+TEST_EXIT=$?
+if [ $TEST_EXIT -ne 0 ]; then
+    echo "${RED}  ✖ Tests failed. Fix failing tests and try again.${NC}"
+    FAILED=1
+else
+    echo "${GREEN}  ✓ All tests passed${NC}"
+fi
+echo ""
+
+# =============================================================================
+# Stage 4: E2E Test Check
+# =============================================================================
+echo "${YELLOW}[4/4] Checking E2E test configuration...${NC}"
+
+if [ -f "e2e/playwright.config.ts" ]; then
+    E2E_TEST_FILES=$(find e2e/tests -name "*.spec.*" 2>/dev/null | wc -l | tr -d ' ')
+    if [ "$E2E_TEST_FILES" -gt 0 ]; then
+        echo "${GREEN}  ✓ ${E2E_TEST_FILES} E2E test file(s) found${NC}"
+    else
+        echo "${YELLOW}  ⚠ No E2E test files found in e2e/tests/${NC}"
+    fi
+else
+    echo "${YELLOW}  ⚠ No Playwright config found, skipping E2E check${NC}"
+fi
+echo ""
+
+# =============================================================================
+# Summary
+# =============================================================================
+echo "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
+if [ $FAILED -eq 0 ]; then
+    echo "${GREEN}  ✅ All pre-push checks passed! Pushing...${NC}"
+    echo "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    exit 0
+else
+    echo "${RED}  ❌ Some pre-push checks failed.${NC}"
+    echo "${RED}     Fix the issues above and run 'git push' again.${NC}"
+    echo "${CYAN}═══════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    exit 1
+fi
