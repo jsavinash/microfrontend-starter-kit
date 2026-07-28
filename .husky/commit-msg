@@ -1,0 +1,85 @@
+#!/bin/sh
+# =============================================================================
+# Commit-msg Hook — Conventional Commit Enforcement
+# =============================================================================
+# Enforces conventional commit format:
+#   <type>(<scope>): <subject>
+#
+# Types: feat, fix, chore, docs, style, refactor, perf, test, ci, build, revert
+# Examples:
+#   feat(auth): add login page
+#   fix(host-shell): resolve routing issue
+#   chore(deps): update dependencies
+# =============================================================================
+
+# ---- Color output helpers ----
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
+# Read commit message from file
+COMMIT_MSG=$(cat "$1")
+
+# ---- Conventional Commit Regex ----
+# Pattern: type(scope): subject
+# Types: feat|fix|chore|docs|style|refactor|perf|test|ci|build|revert
+CONVENTIONAL_REGEX="^(feat|fix|chore|docs|style|refactor|perf|test|ci|build|revert)(\([a-z0-9._-]+\))?: .{1,}$"
+
+# Pattern: Merge commits
+MERGE_REGEX="^Merge branch .*"
+
+# Pattern: Revert commits
+REVERT_REGEX="^Revert .*"
+
+# Pattern: Initial commit
+INITIAL_REGEX="^Initial commit$"
+
+# Pattern: Allow WIP
+WIP_REGEX="^(wip|WIP): .*"
+
+if echo "$COMMIT_MSG" | grep -qE "$MERGE_REGEX"; then
+    exit 0
+fi
+
+if echo "$COMMIT_MSG" | grep -qE "$REVERT_REGEX"; then
+    exit 0
+fi
+
+if echo "$COMMIT_MSG" | grep -qE "$INITIAL_REGEX"; then
+    exit 0
+fi
+
+if echo "$COMMIT_MSG" | grep -qE "$WIP_REGEX"; then
+    echo "${YELLOW}⚠ WIP commit detected — skipping convention check${NC}"
+    exit 0
+fi
+
+if ! echo "$COMMIT_MSG" | grep -qE "$CONVENTIONAL_REGEX"; then
+    echo ""
+    echo "${RED}═══════════════════════════════════════════════════════════════${NC}"
+    echo "${RED}  ❌ Invalid commit message format${NC}"
+    echo "${RED}═══════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    echo "${YELLOW}  Commit message must follow conventional commit format:${NC}"
+    echo ""
+    echo "  ${CYAN}<type>(<scope>): <subject>${NC}"
+    echo ""
+    echo "  ${YELLOW}Types:${NC} feat, fix, chore, docs, style, refactor, perf, test, ci, build, revert"
+    echo ""
+    echo "  ${YELLOW}Examples:${NC}"
+    echo "    ${GREEN}feat(auth): add login page${NC}"
+    echo "    ${GREEN}fix(host-shell): resolve routing issue${NC}"
+    echo "    ${GREEN}chore(deps): update dependencies${NC}"
+    echo ""
+    echo "  ${YELLOW}Your message:${NC}"
+    echo "    ${COMMIT_MSG}"
+    echo ""
+    echo "${RED}═══════════════════════════════════════════════════════════════${NC}"
+    echo ""
+    exit 1
+fi
+
+echo "${GREEN}✓ Commit message follows conventional format${NC}"
+exit 0
