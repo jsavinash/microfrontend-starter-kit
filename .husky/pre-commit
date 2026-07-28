@@ -11,7 +11,8 @@
 #   3. Unit Tests — Run tests for changed packages
 #   4. Debug Artifact Check — Prevent console.log, debugger, etc.
 #   5. Large File Check — Warn about files > 1MB
-#   6. Dependency Audit — Check for known vulnerabilities
+#   6. CI/CD Validation — Validate GitHub Actions workflows and deployment configs
+#   7. Dependency Audit — Check for known vulnerabilities
 # =============================================================================
 
 # ---- Color output helpers ----
@@ -33,7 +34,7 @@ FAILED=0
 # =============================================================================
 # Stage 1: Lint-staged (ESLint + Prettier on staged files)
 # =============================================================================
-echo "${YELLOW}[1/6] Running lint-staged (ESLint + Prettier)...${NC}"
+echo "${YELLOW}[1/7] Running lint-staged (ESLint + Prettier)...${NC}"
 npx lint-staged
 LINT_STAGED_EXIT=$?
 if [ $LINT_STAGED_EXIT -ne 0 ]; then
@@ -47,7 +48,7 @@ echo ""
 # =============================================================================
 # Stage 2: TypeScript Type Checking
 # =============================================================================
-echo "${YELLOW}[2/6] Running TypeScript type check...${NC}"
+echo "${YELLOW}[2/7] Running TypeScript type check...${NC}"
 
 # Get changed .ts/.tsx files (staged)
 CHANGED_TS_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(ts|tsx)$' || true)
@@ -70,7 +71,7 @@ echo ""
 # =============================================================================
 # Stage 3: Run tests for changed packages
 # =============================================================================
-echo "${YELLOW}[3/6] Running tests for changed packages...${NC}"
+echo "${YELLOW}[3/7] Running tests for changed packages...${NC}"
 
 # Detect which packages/apps have changed files
 CHANGED_PACKAGES=""
@@ -122,7 +123,7 @@ echo ""
 # =============================================================================
 # Stage 4: Debug Artifact Check
 # =============================================================================
-echo "${YELLOW}[4/6] Checking for debug artifacts...${NC}"
+echo "${YELLOW}[4/7] Checking for debug artifacts...${NC}"
 
 # Check for console.log, debugger, .only in tests, TODO/FIXME markers
 DEBUG_ISSUES=0
@@ -177,7 +178,7 @@ echo ""
 # =============================================================================
 # Stage 5: Large File Check
 # =============================================================================
-echo "${YELLOW}[5/6] Checking for large files...${NC}"
+echo "${YELLOW}[5/7] Checking for large files...${NC}"
 
 LARGE_FILES=0
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR || true)
@@ -204,9 +205,93 @@ fi
 echo ""
 
 # =============================================================================
-# Stage 6: Dependency Audit (only for new/modified lockfile)
+# Stage 6: CI/CD Validation
 # =============================================================================
-echo "${YELLOW}[6/6] Checking dependency security...${NC}"
+echo "${YELLOW}[6/7] Validating CI/CD configuration...${NC}"
+
+CI_ISSUES=0
+
+# Check if GitHub Actions workflow files are valid YAML
+WORKFLOW_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '^\.github/workflows/.*\.yml$' || true)
+if [ -n "$WORKFLOW_FILES" ]; then
+    for workflow in $WORKFLOW_FILES; do
+        if [ -f "$workflow" ]; then
+            # Basic YAML syntax check (if yq is available)
+            if command -v yq > /dev/null 2>&1; then
+                if ! yq eval "$workflow" > /dev/null 2>&1; then
+                    echo "${RED}  ✖ Invalid YAML syntax in: ${workflow}${NC}"
+                    CI_ISSUES=$((CI_ISSUES + 1))
+                else
+                    echo "${GREEN}  ✓ Valid YAML: ${workflow}${NC}"
+                fi
+            else
+                # Fallback: check for required keys
+                if ! grep -q "^name:" "$workflow"; then
+                    echo "${YELLOW}  ⚠  Missing 'name' in workflow: ${workflow}${NC}"
+                fi
+                if ! grep -q "^on:" "$workflow"; then
+                    echo "${YELLOW}  ⚠  Missing 'on' trigger in workflow: ${workflow}${NC}"
+                fi
+                if ! grep -q "^jobs:" "$workflow"; then
+                    echo "${RED}  ✖ Missing 'jobs' in workflow: ${workflow}${NC}"
+                    CI_ISSUES=$((CI_ISSUES + 1))
+                fi
+            fi
+        fi
+    done
+fi
+
+# Validate Vite configs have required production settings
+VITE_CONFIGS=$(git diff --cached --name-only --diff-filter=ACMR | grep -E 'vite\.config\.(ts|js)$' || true)
+if [ -n "$VITE_CONFIGS" ]; then
+    for config in $VITE_CONFIGS; do
+        if [ -f "$config" ]; then
+            # Check for base path configuration (needed for GitHub Pages)
+            if ! grep -q "base:" "$config" && ! grep -q "base =" "$config"; then
+                echo "${YELLOW}  ⚠  Missing 'base' configuration in ${config} (needed for GitHub Pages)${NC}"
+            fi
+            
+            # Check for module federation plugin
+            if ! grep -q "federation" "$config" && ! grep -q "@originjs/vite-plugin-federation" "$config"; then
+                echo "${YELLOW}  ⚠  Missing Module Federation config in ${config}${NC}"
+            fi
+        fi
+    done
+fi
+
+# Check for .nojekyll file (required for GitHub Pages)
+if git diff --cached --name-only | grep -q "\.nojekyll"; then
+    echo "${GREEN}  ✓ .nojekyll file detected (GitHub Pages compatible)${NC}"
+fi
+
+# Validate package.json scripts exist
+if git diff --cached --name-only | grep -q "package.json"; then
+    if ! grep -q '"build"' package.json; then
+        echo "${RED}  ✖ Missing 'build' script in package.json${NC}"
+        CI_ISSUES=$((CI_ISSUES + 1))
+    fi
+    if ! grep -q '"test"' package.json; then
+        echo "${RED}  ✖ Missing 'test' script in package.json${NC}"
+        CI_ISSUES=$((CI_ISSUES + 1))
+    fi
+    if ! grep -q '"lint"' package.json; then
+        echo "${RED}  ✖ Missing 'lint' script in package.json${NC}"
+        CI_ISSUES=$((CI_ISSUES + 1))
+    fi
+fi
+
+if [ $CI_ISSUES -gt 0 ]; then
+    echo "${RED}  ✖ Found ${CI_ISSUES} CI/CD configuration issue(s). Fix them and try again.${NC}"
+    FAILED=1
+else
+    echo "${GREEN}  ✓ CI/CD configuration valid${NC}"
+fi
+echo ""
+
+# =============================================================================
+# Stage 7: Dependency Audit (only for new/modified lockfile)
+# =============================================================================
+echo "${YELLOW}[7/7] Checking dependency security...${NC}"
 
 LOCKFILE_CHANGED=$(git diff --cached --name-only --diff-filter=ACMR | grep -c "pnpm-lock.yaml" || true)
 if [ "$LOCKFILE_CHANGED" -gt 0 ]; then
