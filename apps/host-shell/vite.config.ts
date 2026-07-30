@@ -13,6 +13,12 @@ const getRemoteUrl = (url: string) => {
     if (process.env.VITE_MFE_DASHBOARD_URL && url.includes("mfeDashboard")) {
         return process.env.VITE_MFE_DASHBOARD_URL;
     }
+    if (process.env.VITE_MFE_SPRINGBOOT_URL && url.includes("mfeSpringboot")) {
+        return process.env.VITE_MFE_SPRINGBOOT_URL;
+    }
+    if (process.env.VITE_DYNAMIC_WEBSITE_URL && url.includes("dynamicWebsite")) {
+        return process.env.VITE_DYNAMIC_WEBSITE_URL;
+    }
     return url;
 };
 
@@ -27,6 +33,12 @@ export default defineConfig({
                 ),
                 mfeDashboard: getRemoteUrl(
                     "http://localhost:3002/assets/remoteEntry.js",
+                ),
+                mfeSpringboot: getRemoteUrl(
+                    "http://localhost:3003/assets/remoteEntry.js",
+                ),
+                dynamicWebsite: getRemoteUrl(
+                    "http://localhost:3004/assets/remoteEntry.js",
                 ),
             },
             shared: ["react", "react-dom", "react-router-dom"],
