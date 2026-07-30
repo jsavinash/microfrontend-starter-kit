@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Spring Boot content styles */
+.springboot-content {
+    line-height: 1.8;
+    color: #333;
+}
+
+.springboot-content h1 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #6db33f;
+    /* Spring Boot green */
+    margin-bottom: 1rem;
+}
+
+.springboot-content h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2e7d32;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.springboot-content h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+    margin-top: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.springboot-content p {
+    margin-bottom: 1rem;
+}
+
+.springboot-content code {
+    background-color: #f5f5f5;
+    padding: 0.125rem 0.375rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    color: #6db33f;
+}
+
+.springboot-content pre {
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+}
+
+.springboot-content ul,
+.springboot-content ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+.springboot-content li {
+    margin-bottom: 0.5rem;
+}
+
+.springboot-content a {
+    color: #6db33f;
+    text-decoration: underline;
+}
+
+.springboot-content a:hover {
+    color: #4a8c2a;
+}
+
+.springboot-content blockquote {
+    border-left: 4px solid #6db33f;
+    padding-left: 1rem;
+    margin-bottom: 1rem;
+    color: #666;
+    font-style: italic;
+}
+
+.springboot-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+}
+
+.springboot-content th,
+.springboot-content td {
+    border: 1px solid #ddd;
+    padding: 0.5rem;
+    text-align: left;
+}
+
+.springboot-content th {
+    background-color: #f0f7ec;
+    font-weight: 600;
+}

@@ -5,6 +5,8 @@ import { Button } from "@repo/ui-components";
 // Lazy load remote microfrontends with type-safe wrappers
 const MfeAuth = lazy(() => import("mfeAuth/App"));
 const MfeDashboard = lazy(() => import("mfeDashboard/App"));
+const MfeSpringboot = lazy(() => import("mfeSpringboot/App"));
+const DynamicWebsite = lazy(() => import("dynamicWebsite/App"));
 
 // ---------- Error Boundary ----------
 interface ErrorBoundaryProps {
@@ -93,6 +95,18 @@ const Navigation: React.FC = () => (
                     >
                         Dashboard
                     </Link>
+                    <Link
+                        to="/springboot"
+                        className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                    >
+                        Spring Boot
+                    </Link>
+                    <Link
+                        to="/dynamic-routing"
+                        className="rounded-md px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                    >
+                        Dynamic Site
+                    </Link>
                 </div>
             </div>
         </div>
@@ -132,6 +146,28 @@ const Home: React.FC = () => (
                     <Button variant="primary">Go to Dashboard</Button>
                 </Link>
             </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                <h2 className="mb-2 text-xl font-semibold text-gray-900">
+                    🍃 Spring Boot Microfrontend
+                </h2>
+                <p className="mb-4 text-gray-600">
+                    Spring Boot guide loaded from GeeksforGeeks.
+                </p>
+                <Link to="/springboot">
+                    <Button variant="primary">Go to Spring Boot</Button>
+                </Link>
+            </div>
+            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                <h2 className="mb-2 text-xl font-semibold text-gray-900">
+                    🌐 Dynamic Website
+                </h2>
+                <p className="mb-4 text-gray-600">
+                    A standalone dynamic React website integrated via Module Federation.
+                </p>
+                <Link to="/dynamic-routing">
+                    <Button variant="primary">Go to Dynamic Site</Button>
+                </Link>
+            </div>
         </div>
         <div className="rounded-lg bg-gray-100 p-6 text-left">
             <h3 className="mb-2 font-semibold text-gray-700">
@@ -149,6 +185,14 @@ const Home: React.FC = () => (
                 <li>
                     <strong>MFE Dashboard</strong> (port 3002) — Dashboard
                     microfrontend
+                </li>
+                <li>
+                    <strong>MFE Spring Boot</strong> (port 3003) — Spring Boot
+                    content microfrontend
+                </li>
+                <li>
+                    <strong>Dynamic Website</strong> (port 3004) — Standalone
+                    dynamic React website
                 </li>
                 <li>
                     <strong>Shared Packages</strong> — UI components, utilities,
@@ -192,6 +236,34 @@ const App: React.FC = () => {
                                         }
                                     >
                                         <MfeDashboard />
+                                    </Suspense>
+                                </ErrorBoundary>
+                            }
+                        />
+                        <Route
+                            path="/springboot/*"
+                            element={
+                                <ErrorBoundary>
+                                    <Suspense
+                                        fallback={
+                                            <LoadingFallback name="Spring Boot Microfrontend" />
+                                        }
+                                    >
+                                        <MfeSpringboot />
+                                    </Suspense>
+                                </ErrorBoundary>
+                            }
+                        />
+                        <Route
+                            path="/dynamic-routing/*"
+                            element={
+                                <ErrorBoundary>
+                                    <Suspense
+                                        fallback={
+                                            <LoadingFallback name="Dynamic Website" />
+                                        }
+                                    >
+                                        <DynamicWebsite />
                                     </Suspense>
                                 </ErrorBoundary>
                             }
